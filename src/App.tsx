@@ -1,134 +1,110 @@
 import React, { useState, useEffect } from 'react';
-import { ViewMode, ProjectItem } from './types';
-import { Navbar } from './components/Navbar';
-import { HeroSection } from './components/HeroSection';
-import { MetricsCounters } from './components/MetricsCounters';
-import { MarqueeTicker } from './components/MarqueeTicker';
-import { WorksSection } from './components/WorksSection';
+import { ProjectItem } from './types';
+import { EditorialNavbar } from './components/EditorialNavbar';
+import { EditorialHero } from './components/EditorialHero';
+import { SelectedProjects } from './components/SelectedProjects';
+import { EditorialProcessSkills } from './components/EditorialProcessSkills';
+import { EditorialContact } from './components/EditorialContact';
 import { ResumeScreen } from './components/ResumeScreen';
-import { ContactFooter } from './components/ContactFooter';
 import { PdfViewerModal } from './components/PdfViewerModal';
 import { ProjectModal } from './components/ProjectModal';
-import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<ViewMode>('overview');
+  const [activePage, setActivePage] = useState<'overview' | 'dossier'>('overview');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: -1000, y: -1000 });
 
+  // Sync state with URL hash
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#dossier' || hash === '#credentials' || hash === '#journey') {
+        setActivePage('dossier');
+      } else {
+        setActivePage('overview');
+      }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleExploreWorks = () => {
-    if (activeView !== 'overview') {
-      setActiveView('overview');
+  const navigateToDossier = () => {
+    window.location.hash = '#dossier';
+    setActivePage('dossier');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToOverview = () => {
+    window.location.hash = '#overview';
+    setActivePage('overview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExploreProjects = () => {
+    if (activePage !== 'overview') {
+      window.location.hash = '#overview';
+      setActivePage('overview');
       setTimeout(() => {
-        const el = document.getElementById('works');
+        const el = document.getElementById('projects');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } else {
-      const el = document.getElementById('works');
+      const el = document.getElementById('projects');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-[#e3e1e9] flex flex-col font-['Plus_Jakarta_Sans'] selection:bg-[#00f2fe]/25 selection:text-[#00f2fe] relative">
+    <div className="min-h-screen bg-[#08080a] text-[#f1f2f6] flex flex-col font-['Plus_Jakarta_Sans'] selection:bg-[#d90429]/30 selection:text-white relative">
       
-      {/* Interactive Cyber Ambient Cursor Spotlight Glow */}
-      <div 
-        className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 hidden md:block"
-        style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(0, 242, 254, 0.045), transparent 70%)`,
-        }}
-        aria-hidden="true"
-      />
+      {activePage === 'overview' ? (
+        <>
+          {/* Editorial Top Navigation for Overview */}
+          <EditorialNavbar
+            activePage={activePage}
+            onNavigateToDossier={navigateToDossier}
+            onOpenPdfResume={() => setIsPdfModalOpen(true)}
+          />
 
-      {/* 3-Zone Sticky Navigation Bar */}
-      <Navbar
-        activeView={activeView}
-        onViewChange={(view) => {
-          setActiveView(view);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenPdfResume={() => setIsPdfModalOpen(true)}
-      />
+          {/* Main Editorial Content (Page 1) */}
+          <main className="flex-1">
+            {/* Hero Section: Batman Cinematic Style with Top Bar, Center Subject, Right Wayfinder Rail, and Bottom Filmstrip */}
+            <EditorialHero
+              onOpenPdfResume={() => setIsPdfModalOpen(true)}
+              onExploreProjects={handleExploreProjects}
+              onNavigateToDossier={navigateToDossier}
+              onSelectProject={(project) => setSelectedProject(project)}
+            />
 
-      {/* Main View Router with Smooth Motion Transition */}
-      <main className="flex-1">
-        <AnimatePresence mode="wait">
-          {activeView === 'overview' ? (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* Screen 1: Hero, Cinematic Visuals & Dynamic Counters */}
-              <HeroSection
-                onExploreWorks={handleExploreWorks}
-                onOpenPdfResume={() => setIsPdfModalOpen(true)}
-                onViewResumeMode={() => {
-                  setActiveView('resume');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              />
+            {/* Selected Projects Showcase: 01, 02, 03 Numbered Cards */}
+            <SelectedProjects
+              onSelectProject={(project) => setSelectedProject(project)}
+            />
 
-              {/* Kinetic Counters (Row of 4 Glass Cards) */}
-              <MetricsCounters />
+            {/* Multi-Column Grid: Education & Skills, Work Process Connected Timeline, Crimson Testimonial Card */}
+            <EditorialProcessSkills />
 
-              {/* Cinematic Animated Marquee Divider */}
-              <MarqueeTicker />
+            {/* High-Contrast "Let's Work Together" Contact Section with Realistic Workspace Image */}
+            <EditorialContact />
+          </main>
+        </>
+      ) : (
+        /* Executive Profile & 7-Pillar Skills Dossier (Page 2) matching user screenshot */
+        <ResumeScreen
+          onBackToOverview={navigateToOverview}
+          onOpenPdfResume={() => setIsPdfModalOpen(true)}
+        />
+      )}
 
-              {/* Curated Works & Google Drive Media Showcase */}
-              <WorksSection
-                onSelectProject={(project) => setSelectedProject(project)}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="resume"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* Screen 2: Detailed Professional Profile & Resume Experience */}
-              <ResumeScreen
-                onBackToOverview={() => {
-                  setActiveView('overview');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onOpenPdfResume={() => setIsPdfModalOpen(true)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      {/* Contact Footer Strip */}
-      <ContactFooter
-        onOpenPdfResume={() => setIsPdfModalOpen(true)}
-        onViewResumeMode={() => {
-          setActiveView('resume');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
-
-      {/* Interactive PDF Resume Previewer & Downloader Modal */}
+      {/* Interactive Official PDF Resume Modal */}
       <PdfViewerModal
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
       />
 
-      {/* Portfolio Project Lightbox Modal */}
+      {/* Project Lightbox Detail Modal */}
       <ProjectModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
